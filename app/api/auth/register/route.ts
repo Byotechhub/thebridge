@@ -3,12 +3,13 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '@/lib/db';
 import { login } from '@/lib/auth';
+import { User } from '@/types';
 
 export async function POST(request: Request) {
   try {
     const { email, password, name, role, userType, companyName, company_name } = await request.json();
 
-    const finalRole = role || userType;
+    const finalRole = (role || userType) as 'candidate' | 'employer';
     const finalCompanyName = company_name || companyName;
 
     if (!email || !password || !name || !finalRole) {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user already exists
-    const existingUsers = await query(`SELECT * FROM users WHERE email = ?`, [email]);
+    const existingUsers = await query<User>(`SELECT * FROM users WHERE email = ?`, [email]);
     if (existingUsers.length > 0) {
       return NextResponse.json({ error: 'User already exists' }, { status: 400 });
     }

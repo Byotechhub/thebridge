@@ -1,28 +1,32 @@
-import { execSync } from 'child_process';
+import { createClient } from '@libsql/client';
+
+const url = process.env.DATABASE_URL || 'file:local.db';
+const authToken = process.env.DATABASE_AUTH_TOKEN;
+
+const client = createClient({
+  url,
+  authToken,
+});
 
 /**
- * Executes a SQL query using the team-db CLI.
- * Only use SELECT statements as per team rules for this tool.
+ * Executes a SQL query using libSQL client.
  */
 export async function query<T>(sql: string, params: any[] = []): Promise<T[]> {
   try {
-    let finalSql = sql;
-    params.forEach((param) => {
-      const sanitizedParam = typeof param === 'string' ? `'${param.replace(/'/g, "''")}'` : param;
-      finalSql = finalSql.replace('?', sanitizedParam);
+    const result = await client.execute({
+      sql,
+      args: params,
     });
-
-    const escapedSql = finalSql.replace(/"/g, '\\"');
-    const output = execSync(`team-db "${escapedSql}"`).toString();
     
-    if (!output.trim() || output.trim() === '[]') return [];
-    
-    try {
-      return JSON.parse(output);
-    } catch (e) {
-      // If it's not JSON, it might be a success message or empty
-      return [] as T[];
-    }
+    // libSQL returns rows that can be accessed by column name
+    // We map them to plain objects to maintain compatibility with existing code
+    return result.rows.map(row => {
+      const obj: any = {};
+      result.columns.forEach((col, i) => {
+        obj[col] = row[i];
+      });
+      return obj as T;
+    });
   } catch (error) {
     console.error('Error executing query:', error);
     throw new Error('Database query failed');
@@ -30,21 +34,18 @@ export async function query<T>(sql: string, params: any[] = []): Promise<T[]> {
 }
 
 /**
- * For mutations, we should ideally have a different path if team-db supports it,
- * but the current instruction is to use raw SQL for reads only.
+ * Executes a mutation (INSERT, UPDATE, DELETE).
  */
 export async function mutate(sql: string, params: any[] = []): Promise<void> {
   try {
-    let finalSql = sql;
-    params.forEach((param) => {
-      const sanitizedParam = typeof param === 'string' ? `'${param.replace(/'/g, "''")}'` : param === null ? 'NULL' : param;
-      finalSql = finalSql.replace('?', sanitizedParam);
+    await client.execute({
+      sql,
+      args: params,
     });
-
-    const escapedSql = finalSql.replace(/"/g, '\\"');
-    execSync(`team-db "${escapedSql}"`);
   } catch (error) {
     console.error('Error executing mutation:', error);
     throw new Error('Database mutation failed');
   }
 }
+
+export default client;

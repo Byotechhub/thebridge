@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { login } from '@/lib/auth';
+import { User } from '@/types';
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
     }
 
-    const users = await query(`SELECT * FROM users WHERE email = ?`, [email]);
+    const users = await query<User>(`SELECT * FROM users WHERE email = ?`, [email]);
     const user = users[0];
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {

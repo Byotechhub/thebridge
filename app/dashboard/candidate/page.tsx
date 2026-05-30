@@ -133,7 +133,7 @@ export default function CandidateDashboard() {
             Candidate: <strong>{user.name}</strong>
           </span>
           <Link href="/">
-            <Button variant="ghost" size="sm">Home</Button>
+            <Button variant="outline" size="sm">Home</Button>
           </Link>
           <LogoutButton />
         </nav>

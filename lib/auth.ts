@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-const secretKey = 'secret'; // In a real app, use process.env.JWT_SECRET
+const secretKey = process.env.AUTH_SECRET || 'secret';
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
@@ -26,16 +26,16 @@ export async function login(user: any) {
   const session = await encrypt({ user, expires });
 
   // Save the session in a cookie
-  cookies().set('session', session, { expires, httpOnly: true });
+  (await cookies()).set('session', session, { expires, httpOnly: true });
 }
 
 export async function logout() {
   // Destroy the session
-  cookies().set('session', '', { expires: new Date(0) });
+  (await cookies()).set('session', '', { expires: new Date(0) });
 }
 
 export async function getSession() {
-  const session = cookies().get('session')?.value;
+  const session = (await cookies()).get('session')?.value;
   if (!session) return null;
   return await decrypt(session);
 }
