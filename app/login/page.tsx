@@ -1,8 +1,46 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email');
+    const password = formData.get('password');
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        router.push('/');
+        router.refresh();
+      } else {
+        const result = await response.json();
+        setError(result.error || 'Invalid credentials');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-md border border-gray-100">
@@ -20,7 +58,14 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6">
+
+        {error && (
+          <div className="mt-4 p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md text-center">
+            {error}
+          </div>
+        )}
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <Input
               label="Email address"
@@ -30,6 +75,7 @@ export default function LoginPage() {
               autoComplete="email"
               required
               placeholder="you@example.com"
+              disabled={loading}
             />
             <Input
               label="Password"
@@ -39,6 +85,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               required
               placeholder="••••••••"
+              disabled={loading}
             />
           </div>
 
@@ -62,8 +109,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
-            Sign in
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
       </div>

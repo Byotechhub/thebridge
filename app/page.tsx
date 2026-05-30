@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { getSession } from '@/lib/auth';
+import { logout } from '@/lib/actions';
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session = await getSession();
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
@@ -9,16 +13,31 @@ export default function LandingPage() {
         <Link className="flex items-center justify-center" href="/">
           <span className="font-bold text-2xl text-blue-600">RoleBridge</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4 flex items-center" href="#features">
+        <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#features">
             Features
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4 flex items-center" href="/login">
-            Sign In
-          </Link>
-          <Link href="/register">
-            <Button size="sm">Get Started</Button>
-          </Link>
+          {session ? (
+            <>
+              <Link className="text-sm font-medium hover:underline underline-offset-4" href="/dashboard">
+                Dashboard
+              </Link>
+              <form action={logout}>
+                <button type="submit" className="text-sm font-medium hover:underline underline-offset-4 text-gray-600">
+                  Sign Out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link className="text-sm font-medium hover:underline underline-offset-4" href="/login">
+                Sign In
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Get Started</Button>
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 
