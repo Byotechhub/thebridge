@@ -1,19 +1,31 @@
-import { createClient } from '@libsql/client';
+import { createClient, Client } from '@libsql/client';
 
-const url = process.env.DATABASE_URL || 'file:local.db';
-const authToken = process.env.DATABASE_AUTH_TOKEN;
+/**
+ * Lazily initialized database client.
+ * Created on first query to avoid failing at module load time on Vercel.
+ */
+let client: Client | null = null;
 
-const client = createClient({
-  url,
-  authToken,
-});
+function getClient(): Client {
+  if (!client) {
+    const url = process.env.DATABASE_URL || 'file:local.db';
+    const authToken = process.env.DATABASE_AUTH_TOKEN;
+    try {
+      client = createClient({ url, authToken });
+    } catch (e: any) {
+      throw new Error(`Failed to create database client: ${e.message}`);
+    }
+  }
+  return client;
+}
 
 /**
  * Executes a SQL query using libSQL client.
  */
 export async function query<T>(sql: string, params: any[] = []): Promise<T[]> {
   try {
-    const result = await client.execute({
+    const db = getClient();
+    const result = await db.execute({
       sql,
       args: params,
     });
@@ -38,7 +50,8 @@ export async function query<T>(sql: string, params: any[] = []): Promise<T[]> {
  */
 export async function mutate(sql: string, params: any[] = []): Promise<void> {
   try {
-    await client.execute({
+    const db = getClient();
+    await db.execute({
       sql,
       args: params,
     });
@@ -48,4 +61,10 @@ export async function mutate(sql: string, params: any[] = []): Promise<void> {
   }
 }
 
-export default client;
+/**
+ * Default export for compatibility (e.g. setup route).
+ * Lazily initialized, will throw if DB can't connect.
+ */
+export default function getDefaultClient() {
+  return getClient();
+}

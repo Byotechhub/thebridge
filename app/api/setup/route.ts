@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import client from '@/lib/db';
+import getClient from '@/lib/db';
 import { schema } from '@/lib/schema';
 
 export async function GET() {
@@ -12,7 +12,8 @@ export async function GET() {
 
     for (const statement of schema) {
       try {
-        await client.execute(statement);
+        const db = getClient();
+        await db.execute(statement);
         results.push({ statement: statement.split('(')[0].trim(), status: 'ok' });
       } catch (err: any) {
         results.push({ statement: statement.split('(')[0].trim(), status: 'error', message: err.message });

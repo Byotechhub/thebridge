@@ -40,7 +40,8 @@ function RegisterForm() {
         setError(result.error || 'Registration failed');
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Something went wrong. Please try again. Check the browser console for details.');
+      console.error('Registration fetch failed:', err);
     } finally {
       setLoading(false);
     }
