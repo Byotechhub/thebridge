@@ -27,9 +27,9 @@ export async function query<T>(sql: string, params: any[] = []): Promise<T[]> {
       });
       return obj as T;
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error executing query:', error);
-    throw new Error('Database query failed');
+    throw new Error(`Database query failed: ${error.message}`);
   }
 }
 
@@ -42,9 +42,9 @@ export async function mutate(sql: string, params: any[] = []): Promise<void> {
       sql,
       args: params,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error executing mutation:', error);
-    throw new Error('Database mutation failed');
+    throw new Error(`Database mutation failed: ${error.message}`);
   }
 }
 
